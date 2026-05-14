@@ -4,19 +4,21 @@ const dotenv = require('dotenv');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const path = require('path');
 
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+const envPath = path.resolve(process.cwd(), '.env');
+dotenv.config({ path: envPath });
 
 const app = express();
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = (process.env.GEMINI_API_KEY || '').trim();
 console.log('--- BACKEND STARTUP ---');
-console.log('Looking for .env at:', path.resolve(process.cwd(), '.env'));
-console.log('GEMINI_API_KEY found:', apiKey ? 'YES (Starts with ' + apiKey.substring(0, 4) + '...)' : 'NO');
+console.log('CWD:', process.cwd());
+console.log('Resolved .env Path:', envPath);
+console.log('GEMINI_API_KEY Status:', apiKey ? 'FOUND (Starts with ' + apiKey.substring(0, 4) + ')' : 'NOT FOUND');
 console.log('-----------------------');
 app.use(cors());
 app.use(express.json());
 
 // Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(apiKey);
 
 app.post('/api/enhance-idea', async (req, res) => {
   const { idea } = req.body;
