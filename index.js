@@ -17,8 +17,8 @@ console.log('-----------------------');
 app.use(cors());
 app.use(express.json());
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(apiKey);
+const { Groq } = require('groq-sdk');
+const groq = new Groq({ apiKey: process.env.VITE_GROQ_API_KEY });
 
 app.post('/api/enhance-idea', async (req, res) => {
   const { idea } = req.body;
@@ -28,64 +28,47 @@ app.post('/api/enhance-idea', async (req, res) => {
   }
 
   try {
-    console.log(`[ai] Initializing model for idea: "${idea.substring(0, 20)}..."`);
+    console.log(`[ai] Initializing Groq for idea: "${idea.substring(0, 20)}..."`);
     
-    // Safety settings
-    const safetySettings = [
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-    ];
-
-    const modelNames = [
-      'gemini-1.5-flash', 
-      'gemini-1.5-flash-latest',
-      'gemini-1.5-pro', 
-      'gemini-1.5-pro-latest',
-      'gemini-pro'
-    ];
-    let lastError;
-    
-    // Diagnostic: List available models
-    try {
-      const result = await genAI.listModels();
-      console.log('--- AVAILABLE MODELS ---');
-      result.models.forEach(m => console.log(`- ${m.name}`));
-      console.log('------------------------');
-    } catch (e) {
-      console.warn('[ai] Could not list models:', e.message);
-    }
-
     const prompt = `
-      Transform this startup idea into a JSON object:
-      Idea: "${idea}"
-      Fields: title, description (2 paras), features (4 items), problems (3 items).
-      Return raw JSON only.
+      Deeply architect this startup project idea: "${idea}"
+      
+      Generate a comprehensive, high-fidelity JSON object with:
+      1. title: A punchy, professional startup name.
+      2. description: 3-4 expansive, insightful paragraphs explaining the vision, the 'why', and the long-term impact.
+      3. features: 6-8 specific, high-value technical features.
+      4. problems: 4-5 deep market friction points this solves.
+      5. sections: An array of 3-4 extra sections. Each section has a 'title' and 'content' (can be a string or an array of strings). 
+         Choose from: "Target Audience", "Revenue Model", "Technical Stack", "Go-to-Market Strategy", "Future Roadmap".
+         Vary which sections you choose to keep it fresh.
+      
+      Return raw JSON only. Do not include markdown code blocks.
     `;
 
-    for (const modelName of modelNames) {
-      try {
-        console.log(`[ai] Attempting with model: ${modelName}`);
-        const model = genAI.getGenerativeModel({ model: modelName, safetySettings });
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        
-        if (text) {
-          const cleanText = text.replace(/```json|```/g, '').trim();
-          const jsonResponse = JSON.parse(cleanText);
-          console.log(`[ai] Success with ${modelName}!`);
-          return res.json(jsonResponse);
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a startup architect. Respond only with valid JSON.'
+        },
+        {
+          role: 'user',
+          content: prompt
         }
-      } catch (err) {
-        lastError = err;
-        console.warn(`[ai] Model ${modelName} failed:`, err.message);
-        if (err.status !== 404) break; // If it's not a 404, stop trying
-      }
+      ],
+      model: 'llama-3.3-70b-versatile',
+      response_format: { type: 'json_object' }
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (content) {
+      const jsonResponse = JSON.parse(content);
+      console.log(`[ai] ✅ Success with Groq!`);
+      // We return the full object, the frontend will decide how to save it
+      return res.json(jsonResponse);
     }
 
-    throw lastError || new Error('All models failed');
+    throw new Error('No content returned from Groq');
   } catch (error) {
     console.error('❌ SERVER ERROR:', error.message);
     res.status(500).json({ error: 'AI Enhancement failed', message: error.message });
@@ -98,7 +81,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('--- Configuration ---');
   console.log('PORT:', PORT);
   console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Set' : 'MISSING');
-  console.log('SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'Set' : 'MISSING');
   console.log('---------------------');
 }).on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
