@@ -4,8 +4,8 @@ const seedIdeas = [
   {
     id: 'eco-track-001',
     title: 'EcoTrack AI',
-    rawDescription: 'A platform to track carbon footprint using receipt scanning.',
-    enhancedDescription: 'EcoTrack AI is a revolutionary mobile platform designed for the conscious consumer. By utilizing advanced OCR and machine learning, users can simply scan their daily shopping receipts to get an instant breakdown of their carbon footprint. The app provides actionable insights, suggesting sustainable alternatives for high-impact purchases and gamifying the journey toward a net-zero lifestyle.\n\nBuilt on a robust blockchain backend for transparent offset tracking, EcoTrack empowers individuals to contribute to global climate goals while saving money through eco-friendly rewards.',
+    raw_description: 'A platform to track carbon footprint using receipt scanning.',
+    enhanced_description: 'EcoTrack AI is a revolutionary mobile platform designed for the conscious consumer. By utilizing advanced OCR and machine learning, users can simply scan their daily shopping receipts to get an instant breakdown of their carbon footprint. The app provides actionable insights, suggesting sustainable alternatives for high-impact purchases and gamifying the journey toward a net-zero lifestyle.\n\nBuilt on a robust blockchain backend for transparent offset tracking, EcoTrack empowers individuals to contribute to global climate goals while saving money through eco-friendly rewards.',
     features: ['Real-time Receipt OCR Analysis', 'Personalized Sustainable Recommendations', 'Verified Carbon Offset Marketplace', 'Social Impact Leaderboards'],
     problems: ['Accurate categorization of non-standardized receipts', 'Sourcing reliable carbon data for millions of SKUs', 'Maintaining high user retention in a lifestyle app'],
     fuel: 142,
@@ -20,8 +20,8 @@ const seedIdeas = [
   {
     id: 'huddle-dev-002',
     title: 'HuddleDev',
-    rawDescription: 'Tinder for developers to find side project partners.',
-    enhancedDescription: 'HuddleDev is the ultimate matchmaking engine for the builder ecosystem. Instead of swiping on looks, you swipe on tech stacks, project vibes, and git contributions. Whether you are a backend wizard looking for a CSS sorcerer or a founder seeking a technical co-pilot, HuddleDev uses a proprietary "Synergy Algorithm" to find your perfect project partner.\n\nThe platform integrates directly with GitHub and Vercel, allowing teams to launch a shared repository and dev environment with a single click after a match.',
+    raw_description: 'Tinder for developers to find side project partners.',
+    enhanced_description: 'HuddleDev is the ultimate matchmaking engine for the builder ecosystem. Instead of swiping on looks, you swipe on tech stacks, project vibes, and git contributions. Whether you are a backend wizard looking for a CSS sorcerer or a founder seeking a technical co-pilot, HuddleDev uses a proprietary "Synergy Algorithm" to find your perfect project partner.\n\nThe platform integrates directly with GitHub and Vercel, allowing teams to launch a shared repository and dev environment with a single click after a match.',
     features: ['GitHub Portfolio Integration', 'Real-time Synergy Matching', 'One-click Team Repository Setup', 'In-app Technical Chat & Voice'],
     problems: ['Preventing ghosting after a match', 'Ensuring balanced skill distribution in teams', 'Verifying the authenticity of project ideas'],
     fuel: 89,
@@ -36,8 +36,8 @@ const seedIdeas = [
   {
     id: 'mind-flow-003',
     title: 'MindFlow Pro',
-    rawDescription: 'AI-driven focus music that adapts to your heart rate.',
-    enhancedDescription: 'MindFlow Pro takes deep work to the next level by creating a bio-responsive auditory environment. By connecting to your wearable devices (Apple Watch, Oura, Garmin), the platform monitors your stress levels and heart rate variability in real-time. It then uses generative AI to adjust the binaural beats, tempo, and frequency of your focus music to keep you in the "Flow State" for longer.\n\nNo more manually skipping tracks or losing focus—MindFlow Pro understands your biological needs before you do.',
+    raw_description: 'AI-driven focus music that adapts to your heart rate.',
+    enhanced_description: 'MindFlow Pro takes deep work to the next level by creating a bio-responsive auditory environment. By connecting to your wearable devices (Apple Watch, Oura, Garmin), the platform monitors your stress levels and heart rate variability in real-time. It then uses generative AI to adjust the binaural beats, tempo, and frequency of your focus music to keep you in the "Flow State" for longer.\n\nNo more manually skipping tracks or losing focus—MindFlow Pro understands your biological needs before you do.',
     features: ['Bio-Metric Sync (Apple/Garmin)', 'Generative AI Soundscapes', 'Focus Duration Analytics', 'Circadian Rhythm Adaptation'],
     problems: ['Latency in music generation based on real-time data', 'Data privacy for sensitive health metrics', 'Compatibility with multiple wearable protocols'],
     fuel: 215,
