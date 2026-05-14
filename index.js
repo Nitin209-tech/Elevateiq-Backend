@@ -28,9 +28,9 @@ app.post('/api/enhance-idea', async (req, res) => {
   }
 
   try {
-    console.log(`[ai] Processing idea: "${idea}"`);
+    console.log(`[ai] Initializing model for idea: "${idea.substring(0, 20)}..."`);
     
-    // Safety settings to prevent unnecessary blocks
+    // Safety settings
     const safetySettings = [
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
@@ -38,7 +38,7 @@ app.post('/api/enhance-idea', async (req, res) => {
       { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
     ];
 
-    let model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash', safetySettings });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash', safetySettings });
     
     const prompt = `
       Transform this startup idea into a JSON object:
@@ -47,11 +47,8 @@ app.post('/api/enhance-idea', async (req, res) => {
       Return raw JSON only.
     `;
 
-    console.log(`[ai] Calling Gemini API for idea: "${idea.substring(0, 20)}..."`);
-    
-    let result;
     try {
-      result = await model.generateContent(prompt);
+      const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
       
@@ -63,17 +60,21 @@ app.post('/api/enhance-idea', async (req, res) => {
       console.log('[ai] Success! Idea enhanced.');
       res.json(jsonResponse);
     } catch (apiErr) {
-      console.error('❌ GEMINI API CALL FAILED:', apiErr.message);
-      console.error('Full Error:', JSON.stringify(apiErr, null, 2));
-      throw apiErr;
+      console.error('❌ GEMINI API ERROR:', apiErr.message);
+      // Fallback to Pro if Flash fails
+      if (apiErr.status === 404 || apiErr.message.includes('not found')) {
+        console.log('[ai] Flash model not found, trying gemini-1.5-pro...');
+        const proModel = genAI.getGenerativeModel({ model: 'gemini-1.5-pro', safetySettings });
+        const proResult = await proModel.generateContent(prompt);
+        const proResponse = await proResult.response;
+        res.json(JSON.parse(proResponse.text().replace(/```json|```/g, '').trim()));
+      } else {
+        throw apiErr;
+      }
     }
   } catch (error) {
     console.error('❌ SERVER ERROR:', error.message);
-    res.status(500).json({ 
-      error: 'Failed to enhance idea', 
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    res.status(500).json({ error: 'AI Enhancement failed', message: error.message });
   }
 });
 
