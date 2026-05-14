@@ -148,6 +148,56 @@ app.post('/api/screenshot-to-code', async (req, res) => {
   }
 });
 
+app.post('/api/ai-fix', async (req, res) => {
+  const { instruction, fileName, content } = req.body;
+
+  if (!instruction || !content) {
+    return res.status(400).json({ error: 'Instruction and content are required' });
+  }
+
+  try {
+    console.log(`[ai-fix] Processing request for ${fileName}...`);
+    
+    const prompt = `
+      You are an expert full-stack developer (Antigravity AI). 
+      Your task is to modify the provided code based on the user's instruction.
+      
+      FILE: ${fileName}
+      INSTRUCTION: ${instruction}
+      
+      CURRENT CODE:
+      \`\`\`
+      ${content}
+      \`\`\`
+      
+      REQUIREMENTS:
+      1. Return ONLY the modified code within triple backticks.
+      2. Then provide a SHORT explanation of what you changed.
+      3. Maintain the same formatting and style as the original code.
+      4. Ensure the code is production-ready and fixes the requested issue or implements the feature.
+    `;
+
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.1
+    });
+
+    const response = completion.choices[0]?.message?.content || '';
+    
+    // Extract code and explanation
+    const codeMatch = response.match(/```(?:[\w]*)\n([\s\S]*?)\n```/);
+    const code = codeMatch ? codeMatch[1] : response;
+    const explanation = response.replace(/```[\s\S]*?```/, '').trim();
+
+    console.log(`[ai-fix] ✅ Success for ${fileName}`);
+    res.json({ code, explanation });
+  } catch (error) {
+    console.error('❌ AI FIX ERROR:', error.message);
+    res.status(500).json({ error: 'AI Fix failed', message: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend Server is LIVE on port ${PORT}`);
