@@ -15,7 +15,8 @@ console.log('Resolved .env Path:', envPath);
 console.log('GEMINI_API_KEY Status:', apiKey ? 'FOUND (Starts with ' + apiKey.substring(0, 4) + ')' : 'NOT FOUND');
 console.log('-----------------------');
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const { Groq } = require('groq-sdk');
 const groq = new Groq({ apiKey: process.env.VITE_GROQ_API_KEY });
@@ -92,8 +93,8 @@ app.post('/api/screenshot-to-code', async (req, res) => {
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // Models to try for vision
-    const visionModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro-vision'];
+    // Models to try for vision (Updated for this high-end API key)
+    const visionModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest', 'gemini-1.5-flash'];
     let lastError;
 
     for (const modelName of visionModels) {
