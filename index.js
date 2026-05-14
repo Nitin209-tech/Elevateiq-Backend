@@ -47,35 +47,32 @@ app.post('/api/enhance-idea', async (req, res) => {
       Return raw JSON only.
     `;
 
+    console.log(`[ai] Calling Gemini API for idea: "${idea.substring(0, 20)}..."`);
+    
     let result;
     try {
       result = await model.generateContent(prompt);
-    } catch (modelErr) {
-      console.warn('Flash model failed, trying Pro model...');
-      model = genAI.getGenerativeModel({ model: 'gemini-pro', safetySettings });
-      result = await model.generateContent(prompt);
-    }
+      const response = await result.response;
+      const text = response.text();
+      
+      if (!text) throw new Error('Empty response from AI');
 
-    const response = await result.response;
-    const text = response.text();
-    
-    if (!text) {
-      throw new Error('AI returned empty response');
+      const cleanText = text.replace(/```json|```/g, '').trim();
+      const jsonResponse = JSON.parse(cleanText);
+      
+      console.log('[ai] Success! Idea enhanced.');
+      res.json(jsonResponse);
+    } catch (apiErr) {
+      console.error('❌ GEMINI API CALL FAILED:', apiErr.message);
+      console.error('Full Error:', JSON.stringify(apiErr, null, 2));
+      throw apiErr;
     }
-
-    const cleanText = text.replace(/```json|```/g, '').trim();
-    const jsonResponse = JSON.parse(cleanText);
-    
-    console.log('[ai] Successfully enhanced idea');
-    res.json(jsonResponse);
   } catch (error) {
-    console.error('❌ GEMINI ERROR:', error);
-    console.error('Error Stack:', error.stack);
-    
+    console.error('❌ SERVER ERROR:', error.message);
     res.status(500).json({ 
       error: 'Failed to enhance idea', 
       message: error.message,
-      details: error.response?.promptFeedback || 'No feedback'
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
