@@ -12,14 +12,16 @@ const apiKey = (process.env.GEMINI_API_KEY || '').trim();
 console.log('--- BACKEND STARTUP ---');
 console.log('CWD:', process.cwd());
 console.log('Resolved .env Path:', envPath);
-console.log('GEMINI_API_KEY Status:', apiKey ? 'FOUND (Starts with ' + apiKey.substring(0, 4) + ')' : 'NOT FOUND');
+const groqKey = (process.env.VITE_GROQ_API_KEY || '').trim();
+console.log('VITE_GROQ_API_KEY Status:', groqKey ? 'FOUND (Starts with ' + groqKey.substring(0, 4) + ')' : 'NOT FOUND');
 console.log('-----------------------');
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const { Groq } = require('groq-sdk');
-const groq = new Groq({ apiKey: process.env.VITE_GROQ_API_KEY });
+const groq = new Groq({ apiKey: groqKey || 'missing_key' });
 
 app.post('/api/enhance-idea', async (req, res) => {
   const { idea } = req.body;
