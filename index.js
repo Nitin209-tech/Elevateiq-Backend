@@ -38,9 +38,25 @@ app.post('/api/enhance-idea', async (req, res) => {
       { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
     ];
 
-    const modelNames = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'];
+    const modelNames = [
+      'gemini-1.5-flash', 
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-pro', 
+      'gemini-1.5-pro-latest',
+      'gemini-pro'
+    ];
     let lastError;
     
+    // Diagnostic: List available models
+    try {
+      const result = await genAI.listModels();
+      console.log('--- AVAILABLE MODELS ---');
+      result.models.forEach(m => console.log(`- ${m.name}`));
+      console.log('------------------------');
+    } catch (e) {
+      console.warn('[ai] Could not list models:', e.message);
+    }
+
     const prompt = `
       Transform this startup idea into a JSON object:
       Idea: "${idea}"
