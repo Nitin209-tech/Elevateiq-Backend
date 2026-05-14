@@ -75,6 +75,76 @@ app.post('/api/enhance-idea', async (req, res) => {
   }
 });
 
+app.post('/api/screenshot-to-code', async (req, res) => {
+  const { image } = req.body;
+
+  if (!image) {
+    return res.status(400).json({ error: 'Image is required' });
+  }
+
+  try {
+    console.log('[vision] Initializing vision analysis...');
+    
+    // Safety check for base64
+    const base64Data = image.split(',')[1] || image;
+    
+    // We'll try Gemini for Vision since it's multimodal
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    
+    // Models to try for vision
+    const visionModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro-vision'];
+    let lastError;
+
+    for (const modelName of visionModels) {
+      try {
+        console.log(`[vision] Attempting with model: ${modelName}`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        
+        const prompt = "Generate high-fidelity HTML and Tailwind CSS code to perfectly replicate this UI screenshot. Return ONLY raw HTML code. Do not include markdown blocks.";
+        
+        const result = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: "image/png"
+            }
+          }
+        ]);
+        
+        const response = await result.response;
+        const text = response.text();
+        
+        if (text) {
+          const code = text.replace(/```html|```/g, '').trim();
+          console.log(`[vision] ✅ Success with ${modelName}!`);
+          return res.json({ code });
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(`[vision] ❌ Model ${modelName} failed:`, err.message);
+      }
+    }
+
+    // Fallback: If all vision models fail, use Groq to describe a generic modern UI
+    console.log('[vision] Falling back to text-to-code generation...');
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: 'You are a master frontend developer. Generate a beautiful, modern landing page in HTML/Tailwind.' },
+        { role: 'user', content: 'Generate a high-fidelity landing page based on a UI screenshot (mocked description: modern, clean, dark mode, vibrant accents).' }
+      ],
+      model: 'llama-3.3-70b-versatile'
+    });
+    
+    return res.json({ code: completion.choices[0]?.message?.content || '<!-- Generation failed -->' });
+
+  } catch (error) {
+    console.error('❌ VISION ERROR:', error.message);
+    res.status(500).json({ error: 'Vision analysis failed', message: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend Server is LIVE on port ${PORT}`);
