@@ -38,7 +38,8 @@ app.post('/api/enhance-idea', async (req, res) => {
       { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
     ];
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash', safetySettings });
+    const modelNames = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'];
+    let lastError;
     
     const prompt = `
       Transform this startup idea into a JSON object:
@@ -47,31 +48,28 @@ app.post('/api/enhance-idea', async (req, res) => {
       Return raw JSON only.
     `;
 
-    try {
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      if (!text) throw new Error('Empty response from AI');
-
-      const cleanText = text.replace(/```json|```/g, '').trim();
-      const jsonResponse = JSON.parse(cleanText);
-      
-      console.log('[ai] Success! Idea enhanced.');
-      res.json(jsonResponse);
-    } catch (apiErr) {
-      console.error('❌ GEMINI API ERROR:', apiErr.message);
-      // Fallback to Pro if Flash fails
-      if (apiErr.status === 404 || apiErr.message.includes('not found')) {
-        console.log('[ai] Flash model not found, trying gemini-1.5-pro...');
-        const proModel = genAI.getGenerativeModel({ model: 'gemini-1.5-pro', safetySettings });
-        const proResult = await proModel.generateContent(prompt);
-        const proResponse = await proResult.response;
-        res.json(JSON.parse(proResponse.text().replace(/```json|```/g, '').trim()));
-      } else {
-        throw apiErr;
+    for (const modelName of modelNames) {
+      try {
+        console.log(`[ai] Attempting with model: ${modelName}`);
+        const model = genAI.getGenerativeModel({ model: modelName, safetySettings });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        if (text) {
+          const cleanText = text.replace(/```json|```/g, '').trim();
+          const jsonResponse = JSON.parse(cleanText);
+          console.log(`[ai] Success with ${modelName}!`);
+          return res.json(jsonResponse);
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(`[ai] Model ${modelName} failed:`, err.message);
+        if (err.status !== 404) break; // If it's not a 404, stop trying
       }
     }
+
+    throw lastError || new Error('All models failed');
   } catch (error) {
     console.error('❌ SERVER ERROR:', error.message);
     res.status(500).json({ error: 'AI Enhancement failed', message: error.message });
